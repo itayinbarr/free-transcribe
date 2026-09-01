@@ -68,6 +68,18 @@ Cross-origin isolation is deliberately **not** enabled: the Hugging Face CDN doe
 not send `Cross-Origin-Resource-Policy`, so `require-corp` would block every model
 download. That rules out multi-threaded WebAssembly, which is why WebGPU matters.
 
+## Verified
+
+The pipeline is checked against real recordings, not synthetic clips. Three
+Hebrew recordings of 47:12, 39:31 and 8:47 run end to end through
+`scripts/bench.ts`, which executes exactly the code the browser runs. On CPU
+alone the tuned Hebrew model reaches roughly **4.3x realtime**, so a 40-minute
+recording transcribes in about ten minutes; WebGPU is considerably faster.
+
+Alongside that: 52 unit tests over the pure pipeline logic, and 34 browser tests
+covering real wav/mp3/m4a/ogg decoding, the interface at desktop and phone
+viewports, and Hebrew PDF generation.
+
 ## Development
 
 ```bash

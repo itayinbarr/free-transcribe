@@ -26,4 +26,4 @@ dist-ssr
 # Local benchmark output and Playwright artefacts
 /test-results
 /playwright-report
-/run-all.sh
+
