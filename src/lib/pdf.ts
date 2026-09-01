@@ -8,7 +8,7 @@
  */
 
 import bidiFactory from 'bidi-js'
-import { jsPDF } from 'jspdf'
+import { jsPDF, type TextOptionsLight } from 'jspdf'
 import { toBlocks, type ExportOptions } from './export.ts'
 import { formatTimecode, speakerName } from './text.ts'
 import type { TranscriptResult } from './types.ts'
@@ -38,7 +38,14 @@ function loadFont(): Promise<string> {
   return fontBase64
 }
 
-/** Reorders one line of logical-order text into the visual order a PDF needs. */
+/**
+ * Reorders one line of logical-order text into the visual order a PDF needs.
+ *
+ * jsPDF ships its own bidi pass, but it reverses Latin runs inside a
+ * right-to-left line, so "Check Point 2026" comes out as "6202 tnioP kcehC".
+ * bidi-js gets it right, so the text is reordered here and jsPDF is told the
+ * input is already visual (see the isInputVisual flags below).
+ */
 export function toVisualOrder(line: string, rtl: boolean): string {
   if (!line) return line
   const levels = bidi.getEmbeddingLevels(line, rtl ? 'rtl' : 'ltr')
@@ -83,7 +90,13 @@ export async function toPdf(result: TranscriptResult, options: PdfOptions = {}):
     doc.setTextColor(...colour)
     for (const line of doc.splitTextToSize(text, width) as string[]) {
       newPageIfNeeded(size * 1.45)
-      doc.text(toVisualOrder(line, rtl), anchorX, y, { align })
+      doc.text(toVisualOrder(line, rtl), anchorX, y, {
+        align,
+        // Without these jsPDF re-runs its own bidi over already-visual text and
+        // mangles every line that mixes Hebrew with Latin or digits.
+        isInputVisual: true,
+        isOutputVisual: true,
+      } as TextOptionsLight)
       y += size * 1.45
     }
     y += gap
