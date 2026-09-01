@@ -115,7 +115,7 @@ export default function App() {
           <p>
             {backend === 'webgpu' && 'Running on WebGPU. '}
             {backend === 'wasm' &&
-              'WebGPU is unavailable in this browser, so this falls back to CPU, which is much slower. Chrome or Edge on a desktop is the fastest option. '}
+              'WebGPU is unavailable in this browser, so this falls back to single-threaded CPU. That is not a little slower, it is slower than realtime, so a long recording may never finish. Chrome or Edge on a desktop is the option that works. '}
             Open source under the MIT licence.{' '}
             <a
               className="underline underline-offset-2 hover:text-slate-900 dark:hover:text-slate-100"

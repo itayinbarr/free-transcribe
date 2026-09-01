@@ -25,7 +25,10 @@ function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
 }
 
-/** Copies a time range out of the recording, zero-padded to a workable length. */
+/**
+ * Views a time range of the recording, copying only when the range is too short
+ * for Whisper and has to be zero-padded.
+ */
 function sliceAudio(audio: Float32Array, start: number, end: number): Float32Array {
   const from = Math.max(0, Math.floor(start * SAMPLE_RATE))
   const to = Math.min(audio.length, Math.ceil(end * SAMPLE_RATE))
@@ -139,10 +142,16 @@ export async function transcribe(
   return finish()
 
   function finish(): TranscriptResult {
+    // Count the speakers who actually made it into the transcript: a turn whose
+    // text came back empty or degenerate is dropped, and reporting a speaker
+    // the reader never sees is worse than reporting one fewer.
+    const heard = new Set(
+      segments.map((segment) => segment.speaker).filter((speaker) => speaker !== undefined),
+    )
     return {
       segments,
       language,
-      speakerCount,
+      speakerCount: Math.min(speakerCount, heard.size) || heard.size,
       duration,
       elapsed: (performance.now() - started) / 1000,
     }

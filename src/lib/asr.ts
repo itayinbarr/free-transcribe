@@ -46,6 +46,7 @@ export async function disposeAsr(): Promise<void> {
   for (const entry of cache.values()) {
     try {
       const transcriber = await entry
+      warmed.delete(transcriber)
       await transcriber?.dispose?.()
     } catch {
       // Disposal is best-effort; a failure here must not break the run.
@@ -54,11 +55,19 @@ export async function disposeAsr(): Promise<void> {
   cache.clear()
 }
 
+const warmed = new WeakSet<object>()
+
 /**
- * Runs one WebGPU warm-up pass so the first real chunk does not pay for shader
- * compilation. Cheap on wasm, so it is unconditional.
+ * Runs one inference so the first real chunk does not pay for shader
+ * compilation.
+ *
+ * This is not free: Whisper pads every input to its 30 second window, so a
+ * warm-up costs as much as a real chunk. On the WebAssembly fallback that is
+ * minutes, which is why it is tracked per pipeline and never repeated.
  */
 export async function warmUp(transcriber: Transcriber, language: Language): Promise<void> {
+  if (warmed.has(transcriber)) return
+  warmed.add(transcriber)
   await transcriber(new Float32Array(SAMPLE_RATE), { language, task: 'transcribe' })
 }
 

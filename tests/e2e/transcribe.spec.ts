@@ -6,11 +6,23 @@ import { fileURLToPath } from 'node:url'
  *
  * This downloads about 110 MB, so it is opt-in:
  *   E2E_MODEL=1 npx playwright test transcribe --project=desktop
+ *
+ * It also needs WebGPU. Whisper pads every input to a 30 second window, so on
+ * the single-threaded WebAssembly fallback even a 12 second clip takes longer
+ * than any sensible test timeout. Headless Chromium does not expose WebGPU on
+ * most Linux setups, so this usually skips there and is meant to be run on a
+ * desktop browser with GPU access.
  */
 test.skip(!process.env.E2E_MODEL, 'set E2E_MODEL=1 to run the full model test')
 
 test('transcribes a file and offers every export', async ({ page }) => {
   await page.goto('/')
+
+  const hasWebGpu = await page.evaluate(async () => {
+    const gpu = (navigator as Navigator & { gpu?: GPU }).gpu
+    return gpu ? Boolean(await gpu.requestAdapter()) : false
+  })
+  test.skip(!hasWebGpu, 'needs WebGPU; the WebAssembly fallback is far too slow for a test')
 
   // The smallest model, so the test does not download 563 MB.
   await page.getByRole('button', { name: 'English' }).click()
