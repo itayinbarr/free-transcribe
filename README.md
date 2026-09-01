@@ -53,6 +53,10 @@ English is different: stock Whisper is good at English, so all three tiers ship.
    slid across the recording with a 5-second hop, each local speaker turn is
    embedded with WeSpeaker, and the embeddings are clustered globally. That is
    what keeps "Speaker 1" the same person from beginning to end.
+   A speaker has to hold the floor for more than about three seconds across the
+   whole recording to get their own label. Below that there is not enough voice
+   for a reliable embedding, and a one-word interjection would otherwise show up
+   as a phantom extra speaker, so it is folded into whoever speaks around it.
 3. **Transcribe.** With diarization on, each speaker turn is transcribed as its
    own unit, which gives exact attribution without needing word-level timing.
    Without it, the recording is processed in blocks so memory stays bounded and
