@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { modelWarning } from './lib/device.ts'
 import { Controls } from './components/Controls.tsx'
 import { Dropzone } from './components/Dropzone.tsx'
 import { JobCard } from './components/JobCard.tsx'
@@ -24,6 +25,7 @@ export default function App() {
 
   const asrModel = getAsrModel(language, tier)
   const totalMB = asrModel.sizeMB + (diarize ? DIARIZATION_SIZE_MB : 0)
+  const warning = useMemo(() => modelWarning(totalMB), [totalMB])
 
   // Hebrew offers one tier and English offers three, so a language switch can
   // leave the tier pointing at something that does not exist for it.
@@ -73,6 +75,11 @@ export default function App() {
           {settingsLocked && (
             <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
               Settings are fixed once the model starts loading. Reload the page to change them.
+            </p>
+          )}
+          {!settingsLocked && warning && (
+            <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+              {warning}
             </p>
           )}
           {!settingsLocked && (
