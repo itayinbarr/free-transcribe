@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  absorbTinySpeakers,
   activityToIntervals,
   blockRanges,
   clipIntervals,
@@ -9,6 +10,7 @@ import {
   mergeTurns,
   packWorkUnits,
   POWERSET,
+  renumberSpeakers,
 } from '../../src/lib/segments.ts'
 
 describe('decodePowerset', () => {
@@ -175,5 +177,52 @@ describe('blockRanges', () => {
       { start: 120, end: 240 },
       { start: 240, end: 250 },
     ])
+  })
+})
+
+describe('renumberSpeakers', () => {
+  it('closes gaps left by overlap resolution', () => {
+    const turns = [
+      { start: 0, end: 5, speaker: 0 },
+      { start: 5, end: 6, speaker: 3 },
+      { start: 6, end: 9, speaker: 0 },
+      { start: 9, end: 12, speaker: 4 },
+    ]
+    expect(renumberSpeakers(turns).map((t) => t.speaker)).toEqual([0, 1, 0, 2])
+  })
+
+  it('leaves an already-tidy timeline alone', () => {
+    const turns = [
+      { start: 0, end: 1, speaker: 0 },
+      { start: 1, end: 2, speaker: 1 },
+    ]
+    expect(renumberSpeakers(turns)).toEqual(turns)
+  })
+})
+
+describe('absorbTinySpeakers', () => {
+  it('folds a one-word interjection into the surrounding speaker', () => {
+    const turns = [
+      { start: 0, end: 40, speaker: 0 },
+      { start: 40, end: 40.8, speaker: 1 },
+      { start: 41, end: 90, speaker: 0 },
+    ]
+    expect(absorbTinySpeakers(turns, 3).every((t) => t.speaker === 0)).toBe(true)
+  })
+
+  it('keeps a speaker who holds the floor for long enough', () => {
+    const turns = [
+      { start: 0, end: 40, speaker: 0 },
+      { start: 40, end: 50, speaker: 1 },
+    ]
+    expect(absorbTinySpeakers(turns, 3)).toEqual(turns)
+  })
+
+  it('does nothing when every speaker is short', () => {
+    const turns = [
+      { start: 0, end: 1, speaker: 0 },
+      { start: 1, end: 2, speaker: 1 },
+    ]
+    expect(absorbTinySpeakers(turns, 3)).toEqual(turns)
   })
 })

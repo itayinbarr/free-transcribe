@@ -123,6 +123,60 @@ export function mergeTurns(turns: SpeakerTurn[], maxGap = 0.75): SpeakerTurn[] {
   return out
 }
 
+/**
+ * Renumbers speakers by first appearance and closes any gaps.
+ *
+ * Clustering assigns indices before overlaps are resolved, and resolving them
+ * can remove a speaker from the timeline entirely, which otherwise leaves a
+ * transcript jumping from "Speaker 1" to "Speaker 4" with nothing in between.
+ */
+export function renumberSpeakers(turns: SpeakerTurn[]): SpeakerTurn[] {
+  const remap = new Map<number, number>()
+  for (const turn of turns) {
+    if (!remap.has(turn.speaker)) remap.set(turn.speaker, remap.size)
+  }
+  return turns.map((turn) => ({ ...turn, speaker: remap.get(turn.speaker)! }))
+}
+
+/**
+ * Folds away speakers who barely speak.
+ *
+ * A one-word interjection is not enough voice for a reliable embedding, so it
+ * often lands in a cluster of its own and shows up as a phantom extra speaker.
+ * Any speaker holding less than `minTotal` seconds across the whole recording
+ * is merged into whoever speaks immediately around them.
+ */
+export function absorbTinySpeakers(turns: SpeakerTurn[], minTotal = 3): SpeakerTurn[] {
+  const totals = new Map<number, number>()
+  for (const turn of turns) {
+    totals.set(turn.speaker, (totals.get(turn.speaker) ?? 0) + (turn.end - turn.start))
+  }
+  const tiny = new Set([...totals.entries()].filter(([, t]) => t < minTotal).map(([s]) => s))
+  // Everyone is tiny only when the recording itself is tiny; leave it alone.
+  if (tiny.size === 0 || tiny.size === totals.size) return turns
+
+  return turns.map((turn, index) => {
+    if (!tiny.has(turn.speaker)) return turn
+    const before = findNeighbour(turns, index, -1, tiny)
+    const after = findNeighbour(turns, index, 1, tiny)
+    const neighbour = before ?? after
+    // Speaker 0 is a valid neighbour, so this must not be a truthiness check.
+    return neighbour === undefined ? turn : { ...turn, speaker: neighbour }
+  })
+}
+
+function findNeighbour(
+  turns: SpeakerTurn[],
+  from: number,
+  step: number,
+  tiny: Set<number>,
+): number | undefined {
+  for (let i = from + step; i >= 0 && i < turns.length; i += step) {
+    if (!tiny.has(turns[i].speaker)) return turns[i].speaker
+  }
+  return undefined
+}
+
 /** Drops turns shorter than `minDuration`, which are usually breath or noise. */
 export function dropShortTurns(turns: SpeakerTurn[], minDuration = 0.4): SpeakerTurn[] {
   return turns.filter((t) => t.end - t.start >= minDuration)

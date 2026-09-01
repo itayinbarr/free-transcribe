@@ -13,12 +13,14 @@ import { AutoModel, AutoModelForAudioFrameClassification, AutoProcessor } from '
 import { agglomerativeCluster, normalise } from './cluster.ts'
 import { EMBEDDING_MODEL, SEGMENTATION_MODEL } from './models.ts'
 import {
+  absorbTinySpeakers,
   activityToIntervals,
   clipIntervals,
   decodePowerset,
   dropShortTurns,
   flattenTurns,
   mergeTurns,
+  renumberSpeakers,
   type Interval,
 } from './segments.ts'
 import type { Backend, SpeakerTurn } from './types.ts'
@@ -240,7 +242,8 @@ export function assignSpeakers(
     }
   })
 
-  const turns = mergeTurns(dropShortTurns(flattenTurns(raw)))
+  const flattened = dropShortTurns(flattenTurns(raw))
+  const turns = renumberSpeakers(mergeTurns(absorbTinySpeakers(mergeTurns(flattened))))
   const speakerCount = new Set(turns.map((t) => t.speaker)).size
   return { turns, speakerCount }
 }
