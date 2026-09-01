@@ -1,0 +1,41 @@
+free-transcribe bundles no model weights. Everything below is downloaded by the
+browser at runtime, directly from the Hugging Face CDN, and is cached locally.
+
+Speech recognition
+------------------
+ivrit-ai/whisper-large-v3-turbo-onnx            Apache-2.0
+  Hebrew fine-tune of OpenAI Whisper large-v3-turbo by ivrit.ai
+  (https://www.ivrit.ai/), trained on roughly 5,050 hours of Hebrew.
+  Base model: openai/whisper-large-v3-turbo, MIT.
+
+onnx-community/whisper-large-v3-turbo_timestamped   MIT
+onnx-community/whisper-small_timestamped           MIT
+onnx-community/whisper-base_timestamped            MIT
+  ONNX exports of OpenAI Whisper. Copyright (c) 2022 OpenAI.
+
+Speaker diarization
+-------------------
+onnx-community/pyannote-segmentation-3.0        MIT
+  ONNX export of pyannote/segmentation-3.0 by Herve Bredin.
+  If you use it in academic work, please cite:
+    Bredin, H. "pyannote.audio 2.1 speaker diarization pipeline", Interspeech 2023.
+
+onnx-community/wespeaker-voxceleb-resnet34-LM   CC-BY-4.0
+  ONNX export of the WeSpeaker ResNet34 speaker-embedding model trained on
+  VoxCeleb, by the WeSpeaker team (https://github.com/wenet-e2e/wespeaker).
+  Used unmodified. CC-BY-4.0 requires attribution, which this notice provides.
+  Licence text: https://creativecommons.org/licenses/by/4.0/
+
+Bundled assets
+--------------
+public/fonts/transcript-font.ttf
+  A subset of DejaVu Sans (Latin plus Hebrew), used to draw Hebrew text in
+  exported PDFs. DejaVu fonts are released under a permissive licence derived
+  from the Bitstream Vera Fonts Copyright:
+  https://dejavu-fonts.github.io/License.html
+
+Optional runtime dependency
+---------------------------
+@ffmpeg/ffmpeg and @ffmpeg/core are fetched from a CDN, and only when a file
+is in a container the browser cannot decode on its own. They are LGPL-licensed
+and are never bundled into this application or linked into it at build time.
