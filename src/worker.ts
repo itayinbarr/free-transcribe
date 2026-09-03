@@ -91,7 +91,9 @@ async function preload(spec: Omit<RunSpec, 'jobId'>): Promise<void> {
   }
 
   // First inference compiles shaders; do it now so the first file is not slow.
-  await warmUp(transcriber, spec.language)
+  // The monolingual flag has to come along: a model without language and task
+  // tokens rejects them outright, and preload is where that first shows up.
+  await warmUp(transcriber, spec.language, model.monolingual ?? false)
   post({ type: 'model-ready', sizeMB: model.sizeMB })
 }
 

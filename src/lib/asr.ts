@@ -93,6 +93,51 @@ export interface RawChunk {
 }
 
 /**
+ * Transcribes a long block by windowing it here rather than in the pipeline.
+ *
+ * Whisper's own chunking asks the model for timestamps, and a monolingual model
+ * has no timestamp tokens in its vocabulary at all, so the request fails. This
+ * cuts the audio into 30 second windows, transcribes each on its own, and takes
+ * the timing from the window positions, which is all the transcript needs.
+ */
+export async function transcribeWindows(
+  transcriber: Transcriber,
+  audio: Float32Array,
+  language: Language,
+): Promise<RawChunk[]> {
+  const window = WHISPER_WINDOW_S * SAMPLE_RATE
+  // A second of overlap so a word split across a boundary survives in one of
+  // the two windows; the duplicate at the seam is removed below.
+  const stride = window - SAMPLE_RATE
+
+  const chunks: RawChunk[] = []
+  for (let start = 0; start < audio.length; start += stride) {
+    const end = Math.min(start + window, audio.length)
+    if (end - start < SAMPLE_RATE / 2) break
+    const text = normaliseText(
+      (await transcriber(audio.subarray(start, end), decodeOptions(language, true)))?.text ?? '',
+    )
+    if (text) {
+      chunks.push({ timestamp: [start / SAMPLE_RATE, end / SAMPLE_RATE], text: dropSeam(chunks, text) })
+    }
+    if (end >= audio.length) break
+  }
+  return chunks.filter((chunk) => chunk.text)
+}
+
+/** Removes a phrase the previous window already ended with. */
+function dropSeam(chunks: RawChunk[], text: string): string {
+  const previous = chunks.at(-1)?.text.split(/\s+/) ?? []
+  const words = text.split(/\s+/)
+  for (let size = Math.min(6, previous.length, words.length); size > 0; size--) {
+    if (previous.slice(-size).join(' ') === words.slice(0, size).join(' ')) {
+      return words.slice(size).join(' ')
+    }
+  }
+  return text
+}
+
+/**
  * Transcribes a block of audio no longer than a few minutes, letting Whisper do
  * its own 30 s windowing inside. Returns timestamped chunks in block-local time.
  */

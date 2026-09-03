@@ -5,7 +5,15 @@
  * benchmark harness run byte-for-byte the same code path.
  */
 
-import { loadAsr, SAMPLE_RATE, transcribeBlock, transcribeUnit, warmUp, WHISPER_WINDOW_S } from './asr.ts'
+import {
+  loadAsr,
+  SAMPLE_RATE,
+  transcribeBlock,
+  transcribeUnit,
+  transcribeWindows,
+  warmUp,
+  WHISPER_WINDOW_S,
+} from './asr.ts'
 import { diarize } from './diarize.ts'
 import { getAsrModel } from './models.ts'
 import { blockRanges, packWorkUnits } from './segments.ts'
@@ -126,12 +134,10 @@ export async function transcribe(
   for (let i = 0; i < blocks.length; i++) {
     throwIfAborted(signal)
     const block = blocks[i]
-    const chunks = await transcribeBlock(
-      transcriber,
-      sliceAudio(audio, block.start, block.end),
-      language,
-      model.monolingual ?? false,
-    )
+    const slice = sliceAudio(audio, block.start, block.end)
+    const chunks = model.monolingual
+      ? await transcribeWindows(transcriber, slice, language)
+      : await transcribeBlock(transcriber, slice, language, false)
     for (const chunk of chunks) {
       const start = block.start + (chunk.timestamp[0] ?? 0)
       const end = block.start + (chunk.timestamp[1] ?? chunk.timestamp[0] ?? 0)
