@@ -37,11 +37,10 @@ export interface AsrModel {
 }
 
 export const ASR_MODELS: Record<Language, Partial<Record<Tier, AsrModel>>> = {
-  // Hebrew has two tiers. Stock whisper-base and whisper-small are still not
-  // offered: benchmarked on real Hebrew speech they reach 68% and 46% word
-  // error rate, so a smaller tier built on them would only be a smaller
-  // download of something that does not work. The fast tier below is a Hebrew
-  // model trained for this purpose instead.
+  // Hebrew has three tiers, each the most accurate option at its size.
+  // Stock whisper-base and whisper-small are not among them: benchmarked on
+  // real Hebrew speech they reach 68% and 46% word error rate, so a tier built
+  // on either would only be a download of something that does not work.
   he: {
     fast: {
       id: 'itayinbar/whisper-base-he',
@@ -64,6 +63,26 @@ export const ASR_MODELS: Record<Language, Partial<Record<Tier, AsrModel>>> = {
         'accurate tier, at 14.9% word error rate on ivrit.ai eval-d1 against 5.5%. ' +
         'Good for a quick pass or a phone; use the accurate tier when the ' +
         'transcript matters.',
+    },
+    balanced: {
+      id: 'itayinbar/whisper-he-100m',
+      label: 'Balanced (Hebrew)',
+      sizeMB: 299,
+      license: 'Apache-2.0',
+      source: 'whisper-base doubled in depth, with a Hebrew tokenizer',
+      // Same story as the fast tier: an fp16 decoder will not load and an int8
+      // encoder changes the transcript, so only this pair is shipped.
+      dtype: {
+        webgpu: { encoder_model: 'fp16', decoder_model_merged: 'fp32' },
+        wasm: { encoder_model: 'fp16', decoder_model_merged: 'fp32' },
+      },
+      wordTimestamps: false,
+      monolingual: true,
+      onlyLanguage: 'he',
+      notes:
+        'Twice the depth of the fast tier for about two points of accuracy: ' +
+        '13.0% word error rate on ivrit.ai eval-d1 against 14.9%, at nearly ' +
+        'twice the download.',
     },
     accurate: {
       id: 'ivrit-ai/whisper-large-v3-turbo-onnx',

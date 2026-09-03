@@ -17,12 +17,14 @@ import { fileURLToPath } from 'node:url'
 test.skip(!process.env.E2E_MODEL, 'set E2E_MODEL=1 to run the model download test')
 test.setTimeout(15 * 60 * 1000)
 
-test('the Hebrew fast tier loads and transcribes through the interface', async ({ page }) => {
+// Both Hebrew models this project trained, through the real interface.
+for (const tier of ['Fast (Hebrew)', 'Balanced (Hebrew)']) {
+  test(`the ${tier} tier loads and transcribes through the interface`, async ({ page }) => {
   const failures: string[] = []
   page.on('pageerror', (error) => failures.push(String(error)))
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Fast (Hebrew)' }).click()
+  await page.getByRole('button', { name: tier }).click()
 
   const fixture = fileURLToPath(new URL('../fixtures/sample-he.wav', import.meta.url))
   await page.locator('input[type=file]').setInputFiles(fixture)
@@ -46,4 +48,5 @@ test('the Hebrew fast tier loads and transcribes through the interface', async (
   const paragraphs = await page.locator('article p').allInnerTexts()
   expect(paragraphs.join('\n')).toMatch(/[֐-׿]/)
   expect(failures).toEqual([])
-})
+  })
+}
