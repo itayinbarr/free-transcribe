@@ -27,7 +27,7 @@ test.describe('interface', () => {
   test('the small Hebrew model is a far smaller download', async ({ page }) => {
     await expect(page.getByRole('button', { name: /Download the model/ })).toContainText('563 MB')
     await page.getByRole('button', { name: 'Fast (Hebrew)' }).click()
-    await expect(page.getByRole('button', { name: /Download the model/ })).toContainText('101 MB')
+    await expect(page.getByRole('button', { name: /Download the model/ })).toContainText('160 MB')
   })
 
   test('shows the download size and updates it with the speaker toggle', async ({ page }) => {
