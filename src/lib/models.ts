@@ -46,20 +46,24 @@ export const ASR_MODELS: Record<Language, Partial<Record<Tier, AsrModel>>> = {
     fast: {
       id: 'itayinbar/whisper-base-he',
       label: 'Fast (Hebrew)',
-      sizeMB: 101,
+      sizeMB: 160,
       license: 'Apache-2.0',
       source: 'whisper-base with a Hebrew tokenizer, trained on 3,113 hours',
+      // Only these dtypes are shipped, because they are the only ones verified
+      // to run and reproduce the fp32 transcript exactly. An fp16 decoder fails
+      // to load outright, and an int8 encoder loads but changes the text.
       dtype: {
-        webgpu: { encoder_model: 'fp16', decoder_model_merged: 'fp16' },
-        wasm: { encoder_model: 'quantized', decoder_model_merged: 'quantized' },
+        webgpu: { encoder_model: 'fp16', decoder_model_merged: 'fp32' },
+        wasm: { encoder_model: 'fp16', decoder_model_merged: 'fp32' },
       },
       wordTimestamps: false,
       monolingual: true,
       onlyLanguage: 'he',
       notes:
-        'Five times smaller and roughly eight times faster than the accurate tier, ' +
-        'at 14.9% word error rate on ivrit.ai eval-d1 against 5.5%. Good for a ' +
-        'quick pass or a phone; use the accurate tier when the transcript matters.',
+        'Three and a half times smaller and roughly eight times faster than the ' +
+        'accurate tier, at 14.9% word error rate on ivrit.ai eval-d1 against 5.5%. ' +
+        'Good for a quick pass or a phone; use the accurate tier when the ' +
+        'transcript matters.',
     },
     accurate: {
       id: 'ivrit-ai/whisper-large-v3-turbo-onnx',

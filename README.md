@@ -19,7 +19,8 @@ use and caches them.
 
 | Role | Model | Licence | Download |
 |---|---|---|---|
-| Hebrew | [`ivrit-ai/whisper-large-v3-turbo-onnx`](https://huggingface.co/ivrit-ai/whisper-large-v3-turbo-onnx) | Apache-2.0 | 563 MB |
+| Hebrew, accurate | [`ivrit-ai/whisper-large-v3-turbo-onnx`](https://huggingface.co/ivrit-ai/whisper-large-v3-turbo-onnx) | Apache-2.0 | 563 MB |
+| Hebrew, fast | [`itayinbar/whisper-base-he`](https://huggingface.co/itayinbar/whisper-base-he) | Apache-2.0 | 160 MB |
 | English, accurate | [`onnx-community/whisper-large-v3-turbo_timestamped`](https://huggingface.co/onnx-community/whisper-large-v3-turbo_timestamped) | MIT | 563 MB |
 | English, balanced | `onnx-community/whisper-small_timestamped` | MIT | 212 MB |
 | English, fast | `onnx-community/whisper-base_timestamped` | MIT | 110 MB |
