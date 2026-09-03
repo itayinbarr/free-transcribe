@@ -10,15 +10,24 @@ test.describe('interface', () => {
     await expect(page.getByText(/audio never leaves your device/i)).toBeVisible()
   })
 
-  test('offers one Hebrew model and three English ones', async ({ page }) => {
-    // Hebrew is the default and has a single model, so no tier buttons.
-    await expect(page.getByText('ivrit.ai Hebrew', { exact: true })).toBeVisible()
+  test('offers two Hebrew models and three English ones', async ({ page }) => {
+    // Hebrew has a purpose-trained small model and the large ivrit.ai one.
+    // It still has no "Balanced" tier: stock whisper-small scores 46% on
+    // Hebrew, so it would only be a bigger download of something worse.
+    await expect(page.getByRole('button', { name: 'ivrit.ai Hebrew' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Fast (Hebrew)' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Balanced' })).toHaveCount(0)
 
     await page.getByRole('button', { name: 'English' }).click()
     for (const tier of ['Fast', 'Balanced', 'Accurate']) {
       await expect(page.getByRole('button', { name: tier })).toBeVisible()
     }
+  })
+
+  test('the small Hebrew model is a far smaller download', async ({ page }) => {
+    await expect(page.getByRole('button', { name: /Download the model/ })).toContainText('563 MB')
+    await page.getByRole('button', { name: 'Fast (Hebrew)' }).click()
+    await expect(page.getByRole('button', { name: /Download the model/ })).toContainText('101 MB')
   })
 
   test('shows the download size and updates it with the speaker toggle', async ({ page }) => {

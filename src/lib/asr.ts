@@ -65,10 +65,26 @@ const warmed = new WeakSet<object>()
  * warm-up costs as much as a real chunk. On the WebAssembly fallback that is
  * minutes, which is why it is tracked per pipeline and never repeated.
  */
-export async function warmUp(transcriber: Transcriber, language: Language): Promise<void> {
+export async function warmUp(
+  transcriber: Transcriber,
+  language: Language,
+  monolingual = false,
+): Promise<void> {
   if (warmed.has(transcriber)) return
   warmed.add(transcriber)
-  await transcriber(new Float32Array(SAMPLE_RATE), { language, task: 'transcribe' })
+  await transcriber(new Float32Array(SAMPLE_RATE), decodeOptions(language, monolingual))
+}
+
+/**
+ * Decoding options for a model.
+ *
+ * A multilingual Whisper has to be told the language, since the Hebrew
+ * fine-tunes have degraded detection. A monolingual model has no language or
+ * task tokens in its vocabulary at all, and passing them makes generation fail
+ * rather than quietly do the wrong thing.
+ */
+function decodeOptions(language: Language, monolingual: boolean): Record<string, unknown> {
+  return monolingual ? {} : { language, task: 'transcribe' }
 }
 
 export interface RawChunk {
@@ -84,10 +100,10 @@ export async function transcribeBlock(
   transcriber: Transcriber,
   audio: Float32Array,
   language: Language,
+  monolingual = false,
 ): Promise<RawChunk[]> {
   const out = await transcriber(audio, {
-    language,
-    task: 'transcribe',
+    ...decodeOptions(language, monolingual),
     chunk_length_s: WHISPER_WINDOW_S,
     stride_length_s: 5,
     return_timestamps: true,
@@ -107,8 +123,9 @@ export async function transcribeUnit(
   transcriber: Transcriber,
   audio: Float32Array,
   language: Language,
+  monolingual = false,
 ): Promise<string> {
-  const out = await transcriber(audio, { language, task: 'transcribe' })
+  const out = await transcriber(audio, decodeOptions(language, monolingual))
   return normaliseText(out?.text ?? '')
 }
 

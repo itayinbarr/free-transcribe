@@ -24,18 +24,43 @@ export interface AsrModel {
   }
   /** True when the export carries cross-attentions (word-level timestamps). */
   wordTimestamps: boolean
+  /**
+   * Set for models trained on a single language with the multilingual
+   * machinery removed. Whisper's decoder normally begins with a language token
+   * and a task token; a monolingual model has neither in its vocabulary, and
+   * passing them makes generation fail rather than degrade.
+   */
+  monolingual?: boolean
   /** Set for models that only ever produce one language. */
   onlyLanguage?: Language
   notes?: string
 }
 
 export const ASR_MODELS: Record<Language, Partial<Record<Tier, AsrModel>>> = {
-  // Hebrew ships a single model on purpose. Benchmarked on real Hebrew speech,
-  // whisper-base (110 MB) emits repetition loops and whisper-small (212 MB) is
-  // still badly garbled, while both run at the same speed as the tuned model.
-  // A smaller Hebrew tier would only buy a smaller download of something that
-  // does not work, so it is not offered.
+  // Hebrew has two tiers. Stock whisper-base and whisper-small are still not
+  // offered: benchmarked on real Hebrew speech they reach 68% and 46% word
+  // error rate, so a smaller tier built on them would only be a smaller
+  // download of something that does not work. The fast tier below is a Hebrew
+  // model trained for this purpose instead.
   he: {
+    fast: {
+      id: 'itayinbar/whisper-base-he',
+      label: 'Fast (Hebrew)',
+      sizeMB: 101,
+      license: 'Apache-2.0',
+      source: 'whisper-base with a Hebrew tokenizer, trained on 3,113 hours',
+      dtype: {
+        webgpu: { encoder_model: 'fp16', decoder_model_merged: 'fp16' },
+        wasm: { encoder_model: 'quantized', decoder_model_merged: 'quantized' },
+      },
+      wordTimestamps: false,
+      monolingual: true,
+      onlyLanguage: 'he',
+      notes:
+        'Five times smaller and roughly eight times faster than the accurate tier, ' +
+        'at 14.9% word error rate on ivrit.ai eval-d1 against 5.5%. Good for a ' +
+        'quick pass or a phone; use the accurate tier when the transcript matters.',
+    },
     accurate: {
       id: 'ivrit-ai/whisper-large-v3-turbo-onnx',
       label: 'ivrit.ai Hebrew',

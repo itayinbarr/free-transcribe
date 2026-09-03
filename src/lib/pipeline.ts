@@ -74,7 +74,7 @@ export async function transcribe(
     }
   })
   throwIfAborted(signal)
-  await warmUp(transcriber, language)
+  await warmUp(transcriber, language, model.monolingual ?? false)
 
   const segments: Segment[] = []
   const push = (segment: Segment) => {
@@ -100,7 +100,12 @@ export async function transcribe(
     for (let i = 0; i < units.length; i++) {
       throwIfAborted(signal)
       const unit = units[i]
-      const text = await transcribeUnit(transcriber, sliceAudio(audio, unit.start, unit.end), language)
+      const text = await transcribeUnit(
+        transcriber,
+        sliceAudio(audio, unit.start, unit.end),
+        language,
+        model.monolingual ?? false,
+      )
       push({ start: unit.start, end: unit.end, text, speaker: unit.speaker })
       report({
         stage: 'transcribing',
@@ -125,6 +130,7 @@ export async function transcribe(
       transcriber,
       sliceAudio(audio, block.start, block.end),
       language,
+      model.monolingual ?? false,
     )
     for (const chunk of chunks) {
       const start = block.start + (chunk.timestamp[0] ?? 0)
